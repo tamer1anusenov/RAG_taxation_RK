@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "TaxationRAGAnswer",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["answer", "citations", "sources", "confidence"],
+  "properties": {
+    "answer": {
+      "type": "string",
+      "description": "Краткий ответ только на основании найденного контекста"
+    },
+    "citations": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/citation"
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/source"
+      }
+    },
+    "confidence": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1
+    }
+  },
+  "$defs": {
+    "citation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["article", "point", "subpoint", "quote", "source_id"],
+      "properties": {
+        "article": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "point": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "subpoint": {
+          "type": ["integer", "string", "null"]
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1
+        },
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_id", "article", "point", "subpoint", "parent_id"],
+      "properties": {
+        "source_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "article": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "point": {
+          "type": ["integer", "null"],
+          "minimum": 1
+        },
+        "subpoint": {
+          "type": ["integer", "string", "null"]
+        },
+        "parent_id": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "temperature": null,
+  "response_format": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "taxation_rag_answer",
+      "strict": true,
+      "schema_file": "config/response_schema.json"
+    }
+  },
+  "system_prompt_file": "config/system_prompt.txt",
+  "retrieval": {
+    "context_variable": "FOUND_CONTEXT",
+    "require_parent_context": true,
+    "max_context_items": 10
+  },
+  "refusal": {
+    "answer": "В найденном контексте нет достаточной информации для ответа на этот вопрос.",
+    "citations": [],
+    "sources": [],
+    "confidence": 0.0
+  }
+}

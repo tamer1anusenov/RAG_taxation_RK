@@ -1,0 +1,12 @@
+{
+  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "embedding_prefix": "",
+  "qdrant_collection": "taxation_children",
+  "qdrant_url": "qdrant_storage",
+  "vector_size": 384,
+  "vector_count": 3152,
+  "bm25_file": "/home/tamerlan/goProjects/RAG_taxation_RK/data/indexes/bm25_index.pkl",
+  "child_source": "/home/tamerlan/goProjects/RAG_taxation_RK/data/chunks/taxiation_children.jsonl",
+  "chunk_count": 3152,
+  "mode": "full"
+}

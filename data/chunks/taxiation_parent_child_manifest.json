@@ -1,0 +1,13 @@
+{
+  "strategy": "parent-child",
+  "retrieval_unit": "point",
+  "generation_context": "full_article_parent",
+  "short_article_rule": "article_without_points_is_one_child_chunk",
+  "source": "/home/tamerlan/goProjects/RAG_taxation_RK/data/raw/taxiation_doc.txt",
+  "parents_file": "/home/tamerlan/goProjects/RAG_taxation_RK/data/chunks/taxiation_parents.jsonl",
+  "children_file": "/home/tamerlan/goProjects/RAG_taxation_RK/data/chunks/taxiation_children.jsonl",
+  "parent_count": 848,
+  "child_count": 3152,
+  "articles_with_points": 646,
+  "articles_without_points": 202
+}

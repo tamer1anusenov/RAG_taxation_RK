@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Taxation RK RAG</title>
+  <style>
+    body{font-family:system-ui,sans-serif;max-width:900px;margin:40px auto;padding:0 18px;color:#202124;background:#f7f8fa}
+    h1{font-size:24px} textarea{width:100%;min-height:110px;padding:12px;border:1px solid #ccd1d9;border-radius:8px;font:inherit;box-sizing:border-box}
+    button{margin-top:10px;padding:10px 18px;border:0;border-radius:7px;background:#2457d6;color:white;font:inherit;cursor:pointer}
+    button:disabled{opacity:.6} #status{margin:14px 0;color:#596273}.card{background:white;border:1px solid #e1e5eb;border-radius:10px;padding:18px;margin-top:18px;white-space:pre-wrap}
+    .muted{color:#687386;font-size:13px}.quote{border-left:3px solid #2457d6;padding-left:12px;margin:10px 0}.error{color:#a12525}
+  </style>
+</head>
+<body>
+  <h1>Налоговый кодекс — RAG поиск</h1>
+  <textarea id="question" placeholder="Например: какая налоговая ставка применяется ..."></textarea>
+  <button id="ask">Задать вопрос</button>
+  <div id="status"></div><div id="result"></div>
+<script>
+const q=document.getElementById('question'), b=document.getElementById('ask'), s=document.getElementById('status'), r=document.getElementById('result');
+b.onclick=async()=>{const question=q.value.trim();if(question.length<2){s.textContent='Введите вопрос.';return}b.disabled=true;s.textContent='Ищем контекст и формируем ответ...';r.innerHTML='';try{const res=await fetch('/api/ask',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question})});const data=await res.json();if(!res.ok)throw new Error(data.detail||'Ошибка API');let html=`<div class="card"><strong>Ответ</strong><p>${escapeHtml(data.answer)}</p><div class="muted">Уверенность: ${data.confidence.toFixed(2)} · ${data.timings_ms.total} мс</div></div>`;if(data.citations.length){html+='<div class="card"><strong>Цитаты</strong>'+data.citations.map(c=>`<div class="quote">Статья ${c.article}${c.point?' · пункт '+c.point:''}${c.subpoint?' · подпункт '+c.subpoint:''}<br>${escapeHtml(c.quote)}</div>`).join('')+'</div>'}r.innerHTML=html;s.textContent='Готово.'}catch(e){s.className='error';s.textContent=e.message}finally{b.disabled=false}};
+function escapeHtml(x){return String(x).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+</script>
+</body>
+</html>
