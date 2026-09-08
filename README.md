@@ -29,7 +29,8 @@
 ├── frontend/
 │   └── index.html                            # минимальный интерфейс
 ├── eval/
-│   └── chunks.json                            # слепок chunks из Qdrant для evaluation
+│   ├── chunks.json                             # слепок chunks из Qdrant для evaluation
+│   └── golden.json                             # сгенерированный golden QA sample
 ├── config/
 │   ├── system_prompt.txt                    # строгие правила ответа
 │   ├── response_schema.json                  # JSON Schema ответа
@@ -178,6 +179,16 @@ python3 -m src.export_qdrant_chunks
 Результат сохраняется в `eval/chunks.json`. Размер страницы можно изменить через
 `--limit`; локальный `qdrant_storage/` определяется автоматически, а для
 облачного Qdrant используются `QDRANT_URL` и `QDRANT_COLLECTION`.
+
+Для генерации небольшого стабильного golden sample используются 50 случайных
+chunks и фиксированный seed `42`. Модель по умолчанию — `gpt-4o-mini`:
+
+```bash
+python3 -m src.generate_golden
+```
+
+Команда делает 50 LLM-запросов и сохраняет результат в `eval/golden.json`.
+Можно изменить параметры через `--seed`, `--sample-size`, `--model` и `--output`.
 
 Пример API-запроса:
 
