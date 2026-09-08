@@ -9,8 +9,10 @@ import random
 from pathlib import Path
 
 import httpx
+from dotenv import load_dotenv
 
 ROOT = Path(__file__).resolve().parent.parent
+load_dotenv(ROOT / ".env")
 IN_PATH = ROOT / "eval" / "chunks.json"
 OUT_PATH = ROOT / "eval" / "golden.json"
 MODEL = "gpt-4o-mini"
