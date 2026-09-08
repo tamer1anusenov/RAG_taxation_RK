@@ -18,10 +18,10 @@ from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 try:
-    from .hybrid_search import BM25_FILE, COLLECTION, DENSE_MODEL, RERANKER_MODEL, dense_search, rrf_merge, rerank, bm25_search
+    from .hybrid_search import BM25_FILE, COLLECTION, DENSE_MODEL, RERANKER_MODEL, QDRANT_LOCAL_PATH, QDRANT_URL, dense_search, rrf_merge, rerank, bm25_search
     from .index_chunks import load_children
 except ImportError:
-    from hybrid_search import BM25_FILE, COLLECTION, DENSE_MODEL, RERANKER_MODEL, dense_search, rrf_merge, rerank, bm25_search
+    from hybrid_search import BM25_FILE, COLLECTION, DENSE_MODEL, RERANKER_MODEL, QDRANT_LOCAL_PATH, QDRANT_URL, dense_search, rrf_merge, rerank, bm25_search
     from index_chunks import load_children
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -168,7 +168,9 @@ async def generate_answer(question: str, context: str) -> dict:
 @app.get("/health")
 def health() -> dict:
     return {"status": "ok", "llm_configured": bool(os.getenv("OPENAI_API_KEY")),
-            "collection": COLLECTION, "dense_model": DENSE_MODEL, "reranker_model": RERANKER_MODEL}
+            "collection": COLLECTION, "dense_model": DENSE_MODEL, "reranker_model": RERANKER_MODEL,
+            "qdrant_mode": "local" if QDRANT_LOCAL_PATH else "remote",
+            "qdrant_target": QDRANT_LOCAL_PATH or QDRANT_URL}
 
 
 @app.get("/", response_class=FileResponse)

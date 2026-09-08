@@ -17,7 +17,8 @@ DENSE_MODEL = os.getenv("EMBEDDING_MODEL", "sentence-transformers/paraphrase-mul
 RERANKER_MODEL = os.getenv("RERANKER_MODEL", "Xenova/ms-marco-MiniLM-L-6-v2")
 COLLECTION = os.getenv("QDRANT_COLLECTION", "taxation_children")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
-QDRANT_LOCAL_PATH = os.getenv("QDRANT_LOCAL_PATH", "")
+DEFAULT_LOCAL_PATH = str(ROOT / "qdrant_storage") if (ROOT / "qdrant_storage").exists() else ""
+QDRANT_LOCAL_PATH = os.getenv("QDRANT_LOCAL_PATH", DEFAULT_LOCAL_PATH)
 EMBEDDING_PREFIX = os.getenv("EMBEDDING_PREFIX", "")
 
 

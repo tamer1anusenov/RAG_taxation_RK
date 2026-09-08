@@ -22,7 +22,8 @@ COLLECTION = os.getenv("QDRANT_COLLECTION", "taxation_children")
 BATCH_SIZE = int(os.getenv("EMBEDDING_BATCH_SIZE", "32"))
 EMBEDDING_PREFIX = os.getenv("EMBEDDING_PREFIX", "")
 QDRANT_URL = os.getenv("QDRANT_URL", "http://localhost:6333")
-QDRANT_LOCAL_PATH = os.getenv("QDRANT_LOCAL_PATH", "")
+DEFAULT_LOCAL_PATH = str(ROOT / "qdrant_storage") if (ROOT / "qdrant_storage").exists() else ""
+QDRANT_LOCAL_PATH = os.getenv("QDRANT_LOCAL_PATH", DEFAULT_LOCAL_PATH)
 
 
 def tokenize(text: str) -> list[str]:
