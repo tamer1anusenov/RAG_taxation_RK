@@ -180,18 +180,23 @@ def frontend() -> str:
 async def ask(request: AskRequest) -> AskResponse:
     started = time.perf_counter()
     timings: dict[str, float] = {}
-    t = time.perf_counter()
-    dense = dense_search(request.question, request.dense_limit)
-    timings["dense_search"] = round((time.perf_counter() - t) * 1000, 2)
-    t = time.perf_counter()
-    sparse = bm25_search(request.question, request.bm25_limit, get_bm25_data())
-    timings["bm25_search"] = round((time.perf_counter() - t) * 1000, 2)
-    t = time.perf_counter()
-    fused = rrf_merge(dense, sparse, 60)
-    timings["rrf_merge"] = round((time.perf_counter() - t) * 1000, 2)
-    t = time.perf_counter()
-    reranked = rerank(request.question, fused, request.rerank_limit)
-    timings["rerank"] = round((time.perf_counter() - t) * 1000, 2)
+    try:
+        t = time.perf_counter()
+        dense = dense_search(request.question, request.dense_limit)
+        timings["dense_search"] = round((time.perf_counter() - t) * 1000, 2)
+        t = time.perf_counter()
+        sparse = bm25_search(request.question, request.bm25_limit, get_bm25_data())
+        timings["bm25_search"] = round((time.perf_counter() - t) * 1000, 2)
+        t = time.perf_counter()
+        fused = rrf_merge(dense, sparse, 60)
+        timings["rrf_merge"] = round((time.perf_counter() - t) * 1000, 2)
+        t = time.perf_counter()
+        reranked = rerank(request.question, fused, request.rerank_limit)
+        timings["rerank"] = round((time.perf_counter() - t) * 1000, 2)
+    except Exception as exc:
+        timings["total"] = round((time.perf_counter() - started) * 1000, 2)
+        log_request(request.question, [], None, None, timings, f"retrieval: {exc}")
+        raise HTTPException(status_code=502, detail=f"Retrieval failed: {str(exc)[:500]}") from exc
     context = build_context(reranked, request.output_limit)
     t = time.perf_counter()
     try:

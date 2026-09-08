@@ -75,7 +75,18 @@ async def telegram_call(client: httpx.AsyncClient, method: str, payload: dict[st
 
 
 async def ask_rag(client: httpx.AsyncClient, question: str) -> str:
-    response = await client.post(f"{RAG_API_URL}/api/ask", json={"question": question}, timeout=REQUEST_TIMEOUT)
+    try:
+        response = await client.post(
+            f"{RAG_API_URL}/api/ask", json={"question": question}, timeout=REQUEST_TIMEOUT
+        )
+    except httpx.TimeoutException as exc:
+        raise RuntimeError(
+            f"RAG API не ответил за {REQUEST_TIMEOUT:.0f} сек. Проверьте нагрузку и RAG_API_URL."
+        ) from exc
+    except httpx.RequestError as exc:
+        raise RuntimeError(
+            f"RAG API недоступен по адресу {RAG_API_URL}. Проверьте RAG_API_URL и статус Web Service."
+        ) from exc
     if response.is_error:
         try:
             detail = response.json().get("detail", response.text)
@@ -103,6 +114,7 @@ async def handle_message(client: httpx.AsyncClient, message: dict[str, Any]) -> 
         )
         return
 
+    progress = None
     try:
         await telegram_call(client, "sendChatAction", {"chat_id": chat_id, "action": "typing"})
         progress = await telegram_call(
@@ -114,7 +126,6 @@ async def handle_message(client: httpx.AsyncClient, message: dict[str, Any]) -> 
     except Exception as exc:
         logger.exception("Request failed for chat_id=%s", chat_id)
         answer = f"Не удалось получить ответ: {exc}"
-        progress = None
 
     if progress:
         await telegram_call(
