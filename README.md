@@ -189,7 +189,9 @@ chunks и фиксированный seed `42`. Для каждого chunk вы
 python3 -m src.generate_golden
 ```
 
-Команда делает 50 LLM-запросов и сохраняет 100 вопросов в `eval/golden.json`.
+Команда делает 50 LLM-запросов и сохраняет 100 записей в `eval/golden.json`.
+Каждая запись имеет формат `{"question": "...", "relevant_ids": ["id_чанка"]}`;
+оба вопроса одного chunk получают его Qdrant ID из `eval/chunks.json`.
 Можно изменить параметры через `--seed`, `--sample-size`, `--model` и `--output`.
 
 Пример API-запроса:

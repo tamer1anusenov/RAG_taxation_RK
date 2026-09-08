@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a deterministic golden question sample from exported evaluation chunks."""
+"""Generate a deterministic golden question list from exported evaluation chunks."""
 from __future__ import annotations
 
 import argparse
@@ -7,7 +7,6 @@ import json
 import os
 import random
 from pathlib import Path
-from typing import Any
 
 import httpx
 
@@ -17,6 +16,7 @@ OUT_PATH = ROOT / "eval" / "golden.json"
 MODEL = "gpt-4o-mini"
 SEED = 42
 SAMPLE_SIZE = 50
+QUESTIONS_PER_CHUNK = 2
 REQUEST_TIMEOUT = float(os.getenv("EVAL_LLM_TIMEOUT_SECONDS", "120"))
 
 SYSTEM_PROMPT = """Ты составляешь evaluation-набор для RAG по Налоговому кодексу Республики Казахстан.
@@ -42,7 +42,7 @@ def sample_chunks(chunks: list[dict[str, str]], sample_size: int, seed: int) -> 
     return random.Random(seed).sample(chunks, sample_size)
 
 
-def generate_item(client: httpx.Client, chunk: dict[str, str], model: str) -> dict[str, list[str]]:
+def generate_questions(client: httpx.Client, chunk: dict[str, str], model: str) -> list[str]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is not set")
@@ -62,41 +62,32 @@ def generate_item(client: httpx.Client, chunk: dict[str, str], model: str) -> di
         timeout=REQUEST_TIMEOUT,
     )
     response.raise_for_status()
-    content = response.json()["choices"][0]["message"]["content"]
-    result = json.loads(content)
+    result = json.loads(response.json()["choices"][0]["message"]["content"])
     questions = result.get("questions") if isinstance(result, dict) else None
     if (
         set(result) != {"questions"}
         or not isinstance(questions, list)
-        or len(questions) != 2
+        or len(questions) != QUESTIONS_PER_CHUNK
         or not all(isinstance(question, str) and question.strip() for question in questions)
-        or len({question.strip().casefold() for question in questions}) != 2
+        or len({question.strip().casefold() for question in questions}) != QUESTIONS_PER_CHUNK
     ):
         raise ValueError(f"Invalid golden response for chunk {chunk['id']}")
-    return {"questions": [question.strip() for question in questions]}
+    return [question.strip() for question in questions]
 
 
 def generate_golden(
-    chunks: list[dict[str, str]], sample_size: int, seed: int, model: str, source: Path, output: Path
+    chunks: list[dict[str, str]], sample_size: int, seed: int, model: str, output: Path
 ) -> None:
     selected = sample_chunks(chunks, sample_size, seed)
-    items: list[dict[str, Any]] = []
+    records: list[dict[str, object]] = []
     with httpx.Client() as client:
         for index, chunk in enumerate(selected, 1):
-            generated = generate_item(client, chunk, model)
-            items.append({"chunk_id": chunk["id"], "context": chunk["text"], **generated})
+            questions = generate_questions(client, chunk, model)
+            records.extend({"question": question, "relevant_ids": [chunk["id"]]} for question in questions)
             print(f"generated {index}/{len(selected)}: {chunk['id']}")
 
-    document = {
-        "seed": seed,
-        "sample_size": sample_size,
-        "questions_per_chunk": 2,
-        "model": model,
-        "source": str(source),
-        "items": items,
-    }
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(document, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    output.write_text(json.dumps(records, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
 def main() -> None:
@@ -109,8 +100,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.sample_size < 1:
         parser.error("--sample-size must be positive")
-    generate_golden(load_chunks(args.input), args.sample_size, args.seed, args.model, args.input, args.output)
-    print(json.dumps({"output": str(args.output), "sample_size": args.sample_size, "seed": args.seed, "model": args.model}, ensure_ascii=False))
+    generate_golden(load_chunks(args.input), args.sample_size, args.seed, args.model, args.output)
+    print(json.dumps({"output": str(args.output), "record_count": args.sample_size * QUESTIONS_PER_CHUNK}, ensure_ascii=False))
 
 
 if __name__ == "__main__":
