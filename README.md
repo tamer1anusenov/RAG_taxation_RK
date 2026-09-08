@@ -30,7 +30,8 @@
 │   └── index.html                            # минимальный интерфейс
 ├── eval/
 │   ├── chunks.json                             # слепок chunks из Qdrant для evaluation
-│   └── golden.json                             # сгенерированный golden QA sample
+│   ├── golden.json                             # golden questions с relevant_ids
+│   └── metrics.json                            # метрики retrieval evaluation
 ├── config/
 │   ├── system_prompt.txt                    # строгие правила ответа
 │   ├── response_schema.json                  # JSON Schema ответа
@@ -193,6 +194,17 @@ python3 -m src.generate_golden
 Каждая запись имеет формат `{"question": "...", "relevant_ids": ["id_чанка"]}`;
 оба вопроса одного chunk получают его Qdrant ID из `eval/chunks.json`.
 Можно изменить параметры через `--seed`, `--sample-size`, `--model` и `--output`.
+
+Для оценки dense retrieval по golden-вопросам:
+
+```bash
+python3 -m src.evaluate_retrieval
+```
+
+Скрипт выполняет поиск top-5 в той же Qdrant-коллекции и сохраняет в
+`eval/metrics.json` средние `precision_at_k`, `recall_at_k`, `hit_rate_at_k` и
+`mrr`, а также результаты по каждому вопросу. По умолчанию `k=5`; ID сравниваются
+напрямую с Qdrant point IDs из `relevant_ids`.
 
 Пример API-запроса:
 
