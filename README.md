@@ -24,7 +24,8 @@
 │   ├── build_parent_child.py                 # построение parent-child чанков
 │   ├── index_chunks.py                       # embedding и индексация
 │   ├── hybrid_search.py                      # dense + BM25 + RRF + reranking
-│   └── api.py                                # FastAPI API
+│   ├── api.py                                # FastAPI API
+│   └── telegram_bot.py                       # Telegram long-polling adapter
 ├── frontend/
 │   └── index.html                            # минимальный интерфейс
 ├── config/
@@ -139,6 +140,26 @@ uvicorn src.api:app --host 0.0.0.0 --port 8000
 `QDRANT_URL`; локальный `qdrant_storage` в репозиторий не добавляется.
 
 Открыть локальный frontend: `http://localhost:8000/`.
+
+## Telegram-бот
+
+Telegram-бот использует long polling и отправляет вопросы в локальный FastAPI.
+Токен хранится только в `.env` и не должен добавляться в Git:
+
+```dotenv
+TELEGRAM_BOT_TOKEN=your_bot_token
+RAG_API_URL=http://127.0.0.1:8000
+```
+
+В одном терминале запустите API, во втором — бота:
+
+```bash
+QDRANT_LOCAL_PATH=qdrant_storage uvicorn src.api:app --host 127.0.0.1 --port 8000
+python3 -m src.telegram_bot
+```
+
+Команды `/start` и `/help` показывают подсказку; любое другое текстовое
+сообщение обрабатывается как вопрос к RAG.
 
 Пример API-запроса:
 
