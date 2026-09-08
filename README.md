@@ -28,6 +28,8 @@
 │   └── telegram_bot.py                       # Telegram long-polling adapter
 ├── frontend/
 │   └── index.html                            # минимальный интерфейс
+├── eval/
+│   └── chunks.json                            # слепок chunks из Qdrant для evaluation
 ├── config/
 │   ├── system_prompt.txt                    # строгие правила ответа
 │   ├── response_schema.json                  # JSON Schema ответа
@@ -164,6 +166,18 @@ python3 -m src.telegram_bot
 сообщение обрабатывается как вопрос к RAG. Во время обработки бот сначала
 показывает статус ожидания, а в итоговом сообщении выводит время dense-поиска,
 BM25, RRF, reranking, генерации и общее время.
+
+## Слепок чанков для evaluation
+
+Экспорт всех точек из Qdrant через paginated `scroll` в формате `{"id": "...", "text": "..."}`:
+
+```bash
+python3 -m src.export_qdrant_chunks
+```
+
+Результат сохраняется в `eval/chunks.json`. Размер страницы можно изменить через
+`--limit`; локальный `qdrant_storage/` определяется автоматически, а для
+облачного Qdrant используются `QDRANT_URL` и `QDRANT_COLLECTION`.
 
 Пример API-запроса:
 

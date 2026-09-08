@@ -85,7 +85,7 @@ async def ask_rag(client: httpx.AsyncClient, question: str) -> str:
         ) from exc
     except httpx.RequestError as exc:
         raise RuntimeError(
-            f"RAG API недоступен по адресу {RAG_API_URL}. Проверьте RAG_API_URL и статус Web Service."
+            #f"RAG API недоступен по адресу {RAG_API_URL}. Проверьте RAG_API_URL и статус Web Service."
         ) from exc
     if response.is_error:
         try:
