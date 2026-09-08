@@ -45,6 +45,23 @@ def format_response(data: dict[str, Any]) -> str:
             if subpoint is not None:
                 location += f", подпункт {subpoint}"
             parts.append(f"• {location}\n{citation.get('quote', '')}")
+    timings = data.get("timings_ms") or {}
+    if timings:
+        labels = {
+            "dense_search": "Dense-поиск",
+            "bm25_search": "BM25-поиск",
+            "rrf_merge": "RRF-объединение",
+            "rerank": "Reranking",
+            "generation": "Генерация ответа",
+            "total": "Всего",
+        }
+        timing_lines = [
+            f"• {labels.get(name, name)}: {float(value):.0f} мс"
+            for name, value in timings.items()
+            if name in labels
+        ]
+        if timing_lines:
+            parts.append("\nВремя по этапам:\n" + "\n".join(timing_lines))
     return "\n\n".join(parts)
 
 
@@ -88,11 +105,26 @@ async def handle_message(client: httpx.AsyncClient, message: dict[str, Any]) -> 
 
     try:
         await telegram_call(client, "sendChatAction", {"chat_id": chat_id, "action": "typing"})
+        progress = await telegram_call(
+            client,
+            "sendMessage",
+            {"chat_id": chat_id, "text": "Запрос принят. Выполняю поиск и формирую ответ..."},
+        )
         answer = await ask_rag(client, text)
     except Exception as exc:
         logger.exception("Request failed for chat_id=%s", chat_id)
         answer = f"Не удалось получить ответ: {exc}"
+        progress = None
 
+    if progress:
+        await telegram_call(
+            client,
+            "editMessageText",
+            {"chat_id": chat_id, "message_id": progress["message_id"], "text": answer[:MAX_MESSAGE_LENGTH]},
+        )
+        if len(answer) <= MAX_MESSAGE_LENGTH:
+            return
+        answer = answer[MAX_MESSAGE_LENGTH:]
     for chunk in split_message(answer):
         await telegram_call(client, "sendMessage", {"chat_id": chat_id, "text": chunk})
 
