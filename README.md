@@ -31,7 +31,6 @@
 │   ├── system_prompt.txt                    # строгие правила ответа
 │   ├── response_schema.json                  # JSON Schema ответа
 │   └── llm_config.json                       # temperature и параметры генерации
-├── Dockerfile                                # контейнер Qdrant
 ├── requirements.txt                          # Python-зависимости RAG-хранилища
 ├── README.md
 └── .gitignore
@@ -46,32 +45,9 @@
 
 `qdrant-client` подключает Python-код к Qdrant, а `fastembed` генерирует эмбеддинги.
 
-### Запуск Qdrant
-
-Сборка образа:
-
-```bash
-docker build -t rag-taxation-qdrant .
-```
-
-Запуск с постоянным хранилищем:
-
-```bash
-docker run -d \
-  --name rag-taxation-qdrant \
-  -p 6333:6333 \
-  -p 6334:6334 \
-  -v "$PWD/qdrant_storage:/qdrant/storage" \
-  rag-taxation-qdrant
-```
-
-Проверка HTTP API:
-
-```bash
-curl http://localhost:6333/readyz
-```
-
-В Python Qdrant доступен по адресу `http://localhost:6333`, а BM25-индекс будет храниться отдельно в проекте.
+В production Qdrant должен быть внешним сервисом. Укажите его URL через
+`QDRANT_URL`; локальное хранилище `QDRANT_LOCAL_PATH` предназначено только для
+разработки и не используется на Vercel.
 
 ## Шаг 5. Эмбеддинги и индексация
 
@@ -149,15 +125,20 @@ Cross-encoder можно заменить через `RERANKER_MODEL`, но дл
 
 ## Шаг 8. API и минимальный frontend
 
-FastAPI оборачивает retrieval и генерацию в эндпоинт `POST /api/ask`. Каждый запрос логируется в JSONL: вопрос, найденные source ID и оценки, финальный ответ и время по стадиям. Логи ограничены `5 MB` на файл и двумя backup-файлами через `RotatingFileHandler`; они сохраняются в `logs/api.jsonl`.
+FastAPI оборачивает retrieval и генерацию в эндпоинт `POST /api/ask`. Каждый запрос логируется в JSONL: вопрос, найденные source ID и оценки, финальный ответ и время по стадиям. Логи ограничены `5 MB` на файл и двумя backup-файлами через `RotatingFileHandler`; локально они сохраняются в `logs/api.jsonl`, а на Vercel — во временном `/tmp/api.jsonl`.
 
-Запуск API из корня проекта:
+Запуск API локально из корня проекта:
 
 ```bash
 uvicorn src.api:app --host 0.0.0.0 --port 8000
 ```
 
-Открыть frontend: `http://localhost:8000/`.
+Для Vercel функция находится в `api/index.py`, а готовый frontend — в
+`frontend/`. Файловая система serverless-функции read-only, поэтому логи при
+развёртывании пишутся в `/tmp`. Qdrant должен быть доступен по внешнему
+`QDRANT_URL`; локальный `qdrant_storage` в репозиторий не добавляется.
+
+Открыть локальный frontend: `http://localhost:8000/`.
 
 Пример API-запроса:
 

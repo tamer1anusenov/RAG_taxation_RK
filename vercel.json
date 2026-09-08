@@ -1,0 +1,20 @@
+{
+  "version": 2,
+  "buildCommand": "echo 'No frontend build required'",
+  "outputDirectory": "frontend",
+  "functions": {
+    "api/index.py": {
+      "runtime": "python3.12"
+    }
+  },
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/api/index.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}

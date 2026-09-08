@@ -1,9 +1,0 @@
-FROM qdrant/qdrant:latest
-
-# Qdrant HTTP API and gRPC API
-ENV QDRANT__SERVICE__HTTP_PORT=6333 \
-    QDRANT__SERVICE__GRPC_PORT=6334
-
-EXPOSE 6333 6334
-
-VOLUME ["/qdrant/storage"]
