@@ -181,13 +181,15 @@ python3 -m src.export_qdrant_chunks
 облачного Qdrant используются `QDRANT_URL` и `QDRANT_COLLECTION`.
 
 Для генерации небольшого стабильного golden sample используются 50 случайных
-chunks и фиксированный seed `42`. Модель по умолчанию — `gpt-4o-mini`:
+chunks и фиксированный seed `42`. Для каждого chunk выполняется один LLM-запрос,
+который генерирует два живых пользовательских вопроса, полностью покрываемых
+этим chunk. Модель по умолчанию — `gpt-4o-mini`:
 
 ```bash
 python3 -m src.generate_golden
 ```
 
-Команда делает 50 LLM-запросов и сохраняет результат в `eval/golden.json`.
+Команда делает 50 LLM-запросов и сохраняет 100 вопросов в `eval/golden.json`.
 Можно изменить параметры через `--seed`, `--sample-size`, `--model` и `--output`.
 
 Пример API-запроса:

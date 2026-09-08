@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a deterministic golden QA sample from exported evaluation chunks."""
+"""Generate a deterministic golden question sample from exported evaluation chunks."""
 from __future__ import annotations
 
 import argparse
@@ -20,9 +20,10 @@ SAMPLE_SIZE = 50
 REQUEST_TIMEOUT = float(os.getenv("EVAL_LLM_TIMEOUT_SECONDS", "120"))
 
 SYSTEM_PROMPT = """Ты составляешь evaluation-набор для RAG по Налоговому кодексу Республики Казахстан.
-На основании переданного CONTEXT создай один конкретный вопрос, на который CONTEXT отвечает напрямую,
-и краткий эталонный ответ только по CONTEXT. Не используй внешние знания и не добавляй сведения,
-которых нет в CONTEXT. Верни только JSON-объект с полями question и answer, без Markdown."""
+На основании переданного CONTEXT создай ровно два разных конкретных вопроса, на которые CONTEXT отвечает
+полностью и напрямую. Формулируй их так, как спросил бы живой пользователь, а не как заголовок статьи
+или пересказ структуры текста. Не используй внешние знания и не добавляй сведения, которых нет в CONTEXT.
+Верни только JSON-объект строго такого вида: {\"questions\": [\"...\", \"...\"]}."""
 
 
 def load_chunks(path: Path) -> list[dict[str, str]]:
@@ -41,7 +42,7 @@ def sample_chunks(chunks: list[dict[str, str]], sample_size: int, seed: int) -> 
     return random.Random(seed).sample(chunks, sample_size)
 
 
-def generate_item(client: httpx.Client, chunk: dict[str, str], model: str) -> dict[str, str]:
+def generate_item(client: httpx.Client, chunk: dict[str, str], model: str) -> dict[str, list[str]]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is not set")
@@ -63,9 +64,16 @@ def generate_item(client: httpx.Client, chunk: dict[str, str], model: str) -> di
     response.raise_for_status()
     content = response.json()["choices"][0]["message"]["content"]
     result = json.loads(content)
-    if set(result) != {"question", "answer"} or not all(isinstance(result[key], str) and result[key].strip() for key in result):
+    questions = result.get("questions") if isinstance(result, dict) else None
+    if (
+        set(result) != {"questions"}
+        or not isinstance(questions, list)
+        or len(questions) != 2
+        or not all(isinstance(question, str) and question.strip() for question in questions)
+        or len({question.strip().casefold() for question in questions}) != 2
+    ):
         raise ValueError(f"Invalid golden response for chunk {chunk['id']}")
-    return {"question": result["question"].strip(), "answer": result["answer"].strip()}
+    return {"questions": [question.strip() for question in questions]}
 
 
 def generate_golden(
@@ -82,6 +90,7 @@ def generate_golden(
     document = {
         "seed": seed,
         "sample_size": sample_size,
+        "questions_per_chunk": 2,
         "model": model,
         "source": str(source),
         "items": items,
