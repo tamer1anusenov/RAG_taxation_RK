@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import pickle
 import random
@@ -84,7 +85,7 @@ def make_compatible_judge() -> Any:
         if "max_tokens" in kwargs and "max_completion_tokens" not in kwargs:
             kwargs["max_completion_tokens"] = kwargs.pop("max_tokens")
         if "max_completion_tokens" in kwargs:
-            kwargs["max_completion_tokens"] = max(int(kwargs["max_completion_tokens"]), 2048)
+            kwargs["max_completion_tokens"] = max(int(kwargs["max_completion_tokens"]), 4096)
         if "temperature" in kwargs and kwargs["temperature"] != 1:
             kwargs.pop("temperature")
         kwargs.pop("top_p", None)
@@ -160,23 +161,29 @@ def main() -> None:
         rows = collect_rows(selected, load_chunks())
     args.cache.write_text(json.dumps(rows, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     dataset = Dataset.from_list(rows)
-    metrics = [ContextPrecision(), ContextRecall(), AnswerRelevancy(strictness=1), AnswerCorrectness()]
+    metrics = [ContextPrecision(), ContextRecall(), AnswerRelevancy(strictness=1), AnswerCorrectness(max_retries=3)]
     result = evaluate(
         dataset,
         metrics=metrics,
         llm=make_compatible_judge(),
         embeddings=FastEmbedRagas(EMBEDDING_MODEL),
-        raise_exceptions=True,
+        raise_exceptions=False,
         show_progress=True,
         batch_size=8,
     )
     scores = result.to_pandas().to_dict(orient="records")
     names = ["context_precision", "context_recall", "answer_relevancy", "answer_correctness"]
-    averages = {name: sum(float(row[name]) for row in scores) / len(scores) for name in names}
+    averages = {}
+    valid_counts = {}
+    for name in names:
+        values = [float(row[name]) for row in scores if math.isfinite(float(row[name]))]
+        valid_counts[name] = len(values)
+        averages[name] = sum(values) / len(values) if values else None
     payload = {
         "question_count": len(rows),
         "judge_model": JUDGE_MODEL,
         "embedding_model": EMBEDDING_MODEL,
+        "valid_counts": valid_counts,
         "metrics": averages,
         "rows": scores,
     }
