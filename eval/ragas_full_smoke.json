@@ -1,0 +1,25 @@
+{
+  "question_count": 1,
+  "judge_model": "gpt-4o",
+  "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+  "metrics": {
+    "context_precision": 0.9999999999,
+    "context_recall": 1.0,
+    "answer_relevancy": 0.9470667607881514,
+    "answer_correctness": 0.6765545010891664
+  },
+  "rows": [
+    {
+      "user_input": "Как налоговый орган проверяет соблюдение требований главы Налогового кодекса?",
+      "retrieved_contexts": [
+        "6. Налоговый орган проверяет соблюдение требований настоящей главы путем проведения мониторинга."
+      ],
+      "response": "Налоговый орган проверяет соблюдение требований главы путем проведения мониторинга.",
+      "reference": "{\"reference_answer\":\"Налоговый орган проверяет соблюдение требований настоящей главы путем проведения мониторинга.\"}",
+      "context_precision": 0.9999999999,
+      "context_recall": 1.0,
+      "answer_relevancy": 0.9470667607881514,
+      "answer_correctness": 0.6765545010891664
+    }
+  ]
+}
